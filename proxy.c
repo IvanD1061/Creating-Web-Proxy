@@ -81,3 +81,32 @@ void parse_uri(char *uri, char *hostname, char *port, char *path) {
         strcpy(path, strchr(hostbegin + hostlen, '/') ? strchr(hostbegin + hostlen, '/') : "/");
     }
 }
+
+//building the request headers. 
+void build_request_headers(rio_t *client_rio, char *host_hdr, char *req_hdrs, char *hostname) {
+    char buf[MAXLINE];
+    int host_header_found = 0;
+
+    req_hdrs[0] = '\0'; // Clear headers
+
+    while (Rio_readlineb(client_rio, buf, MAXLINE) > 0) {
+        if (!strcmp(buf, "\r\n")) break;
+
+        if (!strncasecmp(buf, "Host:", 5)) {
+            strcpy(host_hdr, buf);
+            host_header_found = 1;
+        } else if (strncasecmp(buf, "User-Agent:", 11) &&
+                   strncasecmp(buf, "Connection:", 11) &&
+                   strncasecmp(buf, "Proxy-Connection:", 17)) {
+            strcat(req_hdrs, buf);
+        }
+    }
+
+    if (!host_header_found) {
+        sprintf(host_hdr, "Host: %s\r\n", hostname);
+    }
+
+    strcat(req_hdrs, user_agent_hdr);
+    strcat(req_hdrs, "Connection: close\r\n");
+    strcat(req_hdrs, "Proxy-Connection: close\r\n");
+}
