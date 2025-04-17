@@ -65,3 +65,19 @@ void handle_request(int connfd) {
 
     Close(serverfd);
 }
+
+//Parse thorught URI 
+void parse_uri(char *uri, char *hostname, char *port, char *path) {
+    char *hostbegin = strstr(uri, "//") ? strstr(uri, "//") + 2 : uri;
+    char *hostend = strpbrk(hostbegin, ":/");
+    int hostlen = hostend ? hostend - hostbegin : strlen(hostbegin);
+    strncpy(hostname, hostbegin, hostlen);
+    hostname[hostlen] = '\0';
+
+    if (hostend && *hostend == ':') {
+        sscanf(hostend + 1, "%[^/]%s", port, path);
+    } else {
+        strcpy(port, "80");
+        strcpy(path, strchr(hostbegin + hostlen, '/') ? strchr(hostbegin + hostlen, '/') : "/");
+    }
+}
